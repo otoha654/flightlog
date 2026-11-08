@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Flight Log（初期版）</title>
+  <meta name="description" content="搭乗記録をつける個人用フライトログブック">
+  <meta name="theme-color" content="#1e3456">
+
+  <!-- PWA：ホーム画面に追加したときの設定 -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Flight Log">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1 class="app-title">FLIGHT LOG</h1>
+    <p class="app-sub">Passenger's Logbook</p>
+  </header>
+
+  <main>
+    <!-- ===== 一覧 ===== -->
+    <section id="view-list" class="view" data-view="list">
+      <div class="list-head">
+        <span id="list-count" class="muted">0 flights</span>
+        <input id="search" type="search" placeholder="検索（便名・空港など）" autocomplete="off">
+      </div>
+      <ol id="flight-list" class="flight-list"></ol>
+      <div id="empty" class="empty" hidden>
+        <p>まだ記録がありません。</p>
+        <p>下の「＋ 記録」から最初のフライトを書き込みましょう。</p>
+      </div>
+    </section>
+
+    <!-- ===== 入力・編集フォーム ===== -->
+    <section id="view-form" class="view" data-view="form" hidden>
+      <h2 id="form-title" class="page-title">New Entry</h2>
+      <form id="flight-form" novalidate autocomplete="off">
+        <input type="hidden" name="id">
+
+        <fieldset class="sheet">
+          <legend>Flight</legend>
+          <label class="field">
+            <span>日付 <em class="req">必須</em></span>
+            <input type="date" name="date" required>
+          </label>
+          <div class="row">
+            <label class="field">
+              <span>航空会社</span>
+              <input type="text" name="airline" list="dl-airline" placeholder="ANA">
+            </label>
+            <label class="field">
+              <span>便名</span>
+              <input type="text" name="flightNo" placeholder="NH123" data-upper autocapitalize="characters">
+            </label>
+          </div>
+          <div class="row">
+            <label class="field">
+              <span>機種</span>
+              <input type="text" name="aircraft" list="dl-aircraft" placeholder="B787-8" data-upper autocapitalize="characters">
+            </label>
+            <label class="field">
+              <span>登録記号</span>
+              <input type="text" name="registration" list="dl-registration" placeholder="JA801A" data-upper autocapitalize="characters">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="sheet">
+          <legend>Route</legend>
+          <div class="row route-row">
+            <label class="field">
+              <span>出発地</span>
+              <input type="text" name="from" list="dl-airport" placeholder="HND" data-upper autocapitalize="characters">
+            </label>
+            <span class="arrow" aria-hidden="true">→</span>
+            <label class="field">
+              <span>到着地</span>
+              <input type="text" name="to" list="dl-airport" placeholder="ITM" data-upper autocapitalize="characters">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="sheet">
+          <legend>Times <small>（現地時間）</small></legend>
+          <div class="row">
+            <label class="field">
+              <span>ブロックアウト</span>
+              <span class="time-wrap">
+                <input type="time" name="blockOut">
+                <button type="button" class="now-btn" data-now="blockOut">今</button>
+              </span>
+            </label>
+            <label class="field">
+              <span>オフ（離陸）</span>
+              <span class="time-wrap">
+                <input type="time" name="takeoff">
+                <button type="button" class="now-btn" data-now="takeoff">今</button>
+              </span>
+            </label>
+          </div>
+          <div class="row">
+            <label class="field">
+              <span>オン（着陸）</span>
+              <span class="time-wrap">
+                <input type="time" name="landing">
+                <button type="button" class="now-btn" data-now="landing">今</button>
+              </span>
+            </label>
+            <label class="field">
+              <span>ブロックイン</span>
+              <span class="time-wrap">
+                <input type="time" name="blockIn">
+                <button type="button" class="now-btn" data-now="blockIn">今</button>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="sheet">
+          <legend>Runway &amp; Seat</legend>
+          <div class="row three">
+            <label class="field">
+              <span>離陸RWY</span>
+              <input type="text" name="rwyTakeoff" placeholder="34L" data-upper autocapitalize="characters">
+            </label>
+            <label class="field">
+              <span>着陸RWY</span>
+              <input type="text" name="rwyLanding" placeholder="32L" data-upper autocapitalize="characters">
+            </label>
+            <label class="field">
+              <span>座席</span>
+              <input type="text" name="seat" placeholder="23A" data-upper autocapitalize="characters">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="sheet">
+          <legend>Remarks</legend>
+          <label class="field">
+            <span class="sr-only">備考</span>
+            <textarea name="notes" rows="3" placeholder="天気、景色、機内食など"></textarea>
+          </label>
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="button" id="btn-cancel" class="btn btn-ghost">キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+
+      <datalist id="dl-airline"></datalist>
+      <datalist id="dl-aircraft"></datalist>
+      <datalist id="dl-registration"></datalist>
+      <datalist id="dl-airport"></datalist>
+    </section>
+
+    <!-- ===== 詳細 ===== -->
+    <section id="view-detail" class="view" data-view="detail" hidden>
+      <div id="detail" class="sheet detail-sheet"></div>
+      <div class="detail-actions">
+        <button type="button" id="btn-back" class="btn btn-ghost">← 一覧へ</button>
+        <button type="button" id="btn-edit" class="btn btn-primary">編集</button>
+      </div>
+      <button type="button" id="btn-delete" class="btn btn-danger btn-block">このフライトを削除</button>
+    </section>
+
+    <!-- ===== 集計 ===== -->
+    <section id="view-stats" class="view" data-view="stats" hidden>
+      <h2 class="page-title">Summary</h2>
+      <div id="stats-body"></div>
+    </section>
+
+    <!-- ===== データ管理 ===== -->
+    <section id="view-data" class="view" data-view="data" hidden>
+      <h2 class="page-title">Data</h2>
+
+      <div class="sheet">
+        <h3 class="sheet-h">エクスポート（バックアップ）</h3>
+        <p class="muted">ブラウザのデータが消えた時のために、定期的に保存しておきましょう。</p>
+        <div class="btn-row">
+          <button type="button" id="btn-export-json" class="btn btn-primary">JSONで保存</button>
+          <button type="button" id="btn-export-csv" class="btn btn-ghost">CSVで保存</button>
+        </div>
+        <p id="last-backup" class="muted small"></p>
+      </div>
+
+      <div class="sheet">
+        <h3 class="sheet-h">インポート（復元）</h3>
+        <p class="muted">JSON または CSV を読み込みます。同じ記録は上書き、新しい記録は追加されます（既存のデータは消えません）。</p>
+        <label class="btn btn-ghost btn-block file-btn">
+          ファイルを選ぶ
+          <input type="file" id="import-file" accept=".json,.csv,application/json,text/csv" hidden>
+        </label>
+      </div>
+
+      <div class="sheet">
+        <h3 class="sheet-h">すべて削除</h3>
+        <p class="muted">この端末に保存された記録をすべて消します。先にエクスポートしておくことをおすすめします。</p>
+        <button type="button" id="btn-clear" class="btn btn-danger btn-block">全データを削除</button>
+      </div>
+
+      <p class="muted small center" id="storage-info"></p>
+    </section>
+  </main>
+
+  <!-- 下部タブバー（親指で押しやすい位置） -->
+  <nav class="tabbar" aria-label="メニュー">
+    <button type="button" class="tab" data-tab="list"><span class="tab-ico">☰</span>一覧</button>
+    <button type="button" class="tab tab-add" data-tab="form"><span class="tab-ico">＋</span>記録</button>
+    <button type="button" class="tab" data-tab="stats"><span class="tab-ico">Σ</span>集計</button>
+    <button type="button" class="tab" data-tab="data"><span class="tab-ico">⇅</span>データ</button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
